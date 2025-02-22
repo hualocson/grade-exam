@@ -3,6 +3,7 @@
 import { FC, useState } from "react";
 
 import { Result } from "@/lib/grade-exam";
+import { Check, X } from "lucide-react";
 
 import {
   Select,
@@ -73,7 +74,13 @@ const TableResult: FC<ITableResultProps> = ({ data }) => {
               <TableCell>{row.question}</TableCell>
               <TableCell>{row.correctAnswer}</TableCell>
               <TableCell>{row.studentAnswer}</TableCell>
-              <TableCell>{row.isCorrect ? "True" : "False"}</TableCell>
+              <TableCell>
+                {row.isCorrect ? (
+                  <Check className="size-6 text-teal-400" />
+                ) : (
+                  <X className="size-6 text-red-400" />
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

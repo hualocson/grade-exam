@@ -19,7 +19,10 @@ const csvFileToArray = (csvString: string): Record<string, string>[] => {
   return rows.map((row) => {
     const values = row.replace(/\r$/, "").split(",");
     return Object.fromEntries(
-      headers.map((header, index) => [header, values[index] || ""])
+      headers.map((header, index) => [
+        header,
+        values[index].toLowerCase() || "",
+      ])
     );
   });
 };
