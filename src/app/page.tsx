@@ -1,101 +1,151 @@
-import Image from "next/image";
+"use client";
+
+import { ChangeEventHandler, MouseEventHandler, useState } from "react";
+
+import gradeExam, { Result } from "@/lib/grade-exam";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+
+import DataTable from "./components/data-table";
+import TableResult from "./components/table-result";
+
+const csvFileToArray = (csvString: string): Record<string, string>[] => {
+  const [headerLine, ...rows] = csvString.trim().split("\n");
+  const headers = headerLine.replace(/\r$/, "").split(",");
+
+  return rows.map((row) => {
+    const values = row.replace(/\r$/, "").split(",");
+    return Object.fromEntries(
+      headers.map((header, index) => [header, values[index] || ""])
+    );
+  });
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [ansFile, setAnsFile] = useState<File>();
+  const [ansData, setAnsData] = useState<Record<string, string>[]>([]);
+  const [gradeResult, setGradeResult] = useState<Result>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const [exFile, setExFile] = useState<File>();
+  const [exData, setExData] = useState<Record<string, string>[]>([]);
+
+  const [showTable, setShowTable] = useState({
+    ans: true,
+    ex: true,
+  });
+
+  const handleOnChange: (
+    fileType: "ans" | "ex"
+  ) => ChangeEventHandler<HTMLInputElement> = (fileType) => (e) => {
+    const files = e.target.files;
+    if (!files) return;
+    if (fileType === "ans") setAnsFile(files[0]);
+    if (fileType === "ex") setExFile(files[0]);
+  };
+
+  const handleOnSubmit: (
+    fileType: "ans" | "ex"
+  ) => MouseEventHandler<HTMLButtonElement> = (fileType) => (e) => {
+    e.preventDefault();
+
+    if (ansFile) {
+      const fileReader = new FileReader();
+      fileReader.onload = function (event) {
+        if (!event.target) return;
+
+        const text = event.target.result as string;
+        const arr = csvFileToArray(text);
+        if (fileType === "ans") setAnsData(arr);
+      };
+
+      fileReader.readAsText(ansFile);
+    }
+
+    if (exFile) {
+      const fileReader = new FileReader();
+      fileReader.onload = function (event) {
+        if (!event.target) return;
+
+        const text = event.target.result as string;
+        const arr = csvFileToArray(text);
+        if (fileType === "ex") setExData(arr);
+      };
+
+      fileReader.readAsText(exFile);
+    }
+  };
+
+  return (
+    <div className="container mx-auto grid max-w-screen-lg grid-cols-2 gap-2 p-12">
+      <div className="grid w-full max-w-sm items-center gap-1.5">
+        <Label htmlFor="picture">Answers file</Label>
+        <Input
+          id="picture"
+          type="file"
+          accept=".csv"
+          onChange={handleOnChange("ans")}
+        />
+        <Button onClick={handleOnSubmit("ans")}>Import</Button>
+      </div>
+      <div className="grid w-full max-w-sm items-center gap-1.5">
+        <Label htmlFor="picture">Student file</Label>
+        <Input
+          id="picture"
+          type="file"
+          accept=".csv"
+          onChange={handleOnChange("ex")}
+        />
+        <Button onClick={handleOnSubmit("ex")}>Import ex</Button>
+      </div>
+      {/* read file */}
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-bold">Answers sheet</h1>
+          <Switch
+            checked={showTable.ans}
+            onCheckedChange={(checked) =>
+              setShowTable((prev) => ({
+                ...prev,
+                ans: checked,
+              }))
+            }
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        {showTable.ans && <DataTable data={ansData} />}
+      </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-bold">Student answers sheet</h1>
+          <Switch
+            checked={showTable.ex}
+            onCheckedChange={(checked) =>
+              setShowTable((prev) => ({
+                ...prev,
+                ex: checked,
+              }))
+            }
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+        {showTable.ex && <DataTable data={exData} />}
+      </div>
+
+      <Button
+        onClick={() => {
+          const result = gradeExam(ansData, exData);
+          setGradeResult(result);
+        }}
+        className="col-span-2"
+      >
+        Grade
+      </Button>
+
+      <div className="col-span-2">
+        <TableResult data={gradeResult} />
+      </div>
     </div>
   );
 }
